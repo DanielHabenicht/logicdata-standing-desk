@@ -50,7 +50,7 @@ Signal Inversion: Yes
 Capturing the converted output in [standing-desk_logs.hex](/records/standing-desk_logs.hex).
 
 To extract the data this [thread](https://web.archive.org/web/20170720061035/https://www.mikrocontroller.net/topic/369941#new) turned out to be useful, stating that the last 8 bits of a message are the height.
-With a `[serial_data.py](/serial_data.py)` script I could confirm the numbers.
+With a [`serial_data.py`](/serial_data.py) script I could confirm the numbers.
 
 # Connecting UpsyDesky (esphome-standing-desk)
 
