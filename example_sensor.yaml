@@ -3,7 +3,9 @@
 #####################
 
 external_components:
-  - source: github://danielhabenicht/esphome-standing-desk
+  - source:
+      type: local
+      path: ../components
     components: [ standing_desk_height ]
     
 
@@ -15,14 +17,50 @@ uart:
     number: ${standing_desk_uart_rx_pin}
     inverted: true
   parity: EVEN
-  debug: &uart_debug
-    direction: RX
-    dummy_receiver: true
-    after:
-      timeout: 50ms
-    sequence:
-      - lambda: UARTDebug::log_hex(uart::UART_DIRECTION_TX, bytes, ':');
+  # debug: &uart_debug
+  #   direction: RX
+  #   dummy_receiver: true
+  #   after:
+  #     timeout: 50ms
+  #   sequence:
+  #     - lambda: UARTDebug::log_hex(uart::UART_DIRECTION_TX, bytes, ':');
 
+sensor:
+  - platform: standing_desk_height
+    id: desk_height
+    name: ${desk_height_name}
+    unit_of_measurement: ${default_height_units}
+    variant: ${standing_desk_variant}
+
+number:
+  - platform: template
+    id: target_desk_height
+    name: ${target_desk_height_name}
+    unit_of_measurement: ${default_height_units}
+    restore_value: true
+    optimistic: true
+    min_value: ${standing_desk_min_height}
+    max_value: ${standing_desk_max_height}
+    step: 0.1
+    set_action:
+      then:
+        - if:
+            condition:
+              lambda: "return id(desk_height)->get_last_read() > x;"
+            then:
+              - switch.turn_on: switch_down
+              - wait_until:
+                  condition:
+                    lambda: "return id(desk_height)->get_last_read() <= x + 0.4;"
+                  timeout: 20s
+              - switch.turn_off: switch_down
+            else:
+              - switch.turn_on: switch_up
+              - wait_until:
+                  condition:
+                    lambda: "return id(desk_height)->get_last_read() >= x - 0.4;"
+                  timeout: 20s
+              - switch.turn_off: switch_up
 
 
 output:
@@ -45,7 +83,6 @@ output:
   - platform: gpio
     id: bit4
     pin: ${bit4_pin}
-
 
 # Logical Connection of Action and Bits
 switch:
@@ -224,7 +261,7 @@ substitutions:
   friendly_name: "Upsy Desky"
   desk_height_name: "Desk Height"
   target_desk_height_name: "Target Desk Height"
-
+  standing_desk_variant: "logicdata"
   # Standing Desk Component Config
   standing_desk_uart_rx_pin: D2
   standing_desk_min_height: "68"
