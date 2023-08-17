@@ -1,0 +1,283 @@
+#####################
+# template
+#####################
+
+external_components:
+  - source: github://danielhabenicht/esphome-standing-desk
+    components: [ standing_desk_height ]
+    
+
+uart:
+# Direction: Handset -> Control Box
+- id: handset_tx
+  baud_rate: 1000
+  rx_pin: 
+    number: ${standing_desk_uart_rx_pin}
+    inverted: true
+  parity: EVEN
+  debug: &uart_debug
+    direction: RX
+    dummy_receiver: true
+    after:
+      timeout: 50ms
+    sequence:
+      - lambda: UARTDebug::log_hex(uart::UART_DIRECTION_TX, bytes, ':');
+
+
+
+output:
+  # HS1
+  - platform: gpio
+    id: bit1
+    pin: ${bit1_pin}
+
+  # HS2
+  - platform: gpio
+    id: bit2
+    pin: ${bit2_pin}
+
+  # HS3
+  - platform: gpio
+    id: bit3
+    pin: ${bit3_pin}
+
+  # HS4
+  - platform: gpio
+    id: bit4
+    pin: ${bit4_pin}
+
+
+# Logical Connection of Action and Bits
+switch:
+  - platform: output
+    name: "up"
+    id: "switch_up"
+    output: bit1
+    on_turn_on:
+      then: 
+        - output.turn_on: bit3
+    on_turn_off:
+      then:
+        - output.turn_off: bit3
+
+  - platform: output
+    name: "down"
+    id: "switch_down"
+    output: bit1
+    on_turn_on:
+      then: 
+        - output.turn_on: bit4
+    on_turn_off:
+      then:
+        - output.turn_off: bit4
+
+  - platform: output
+    name: "move position1"
+    id: "move_position1"
+    output: bit3
+    # on_turn_on:
+    #   then: 
+    #     - output.turn_on: bit4
+    # on_turn_off:
+    #   then:
+    #     - output.turn_off: bit4
+
+  - platform: output
+    name: "move_position2"
+    id: "move_position2"
+    output: bit4
+    # on_turn_on:
+    #   then: 
+    #     - output.turn_on: bit4
+    # on_turn_off:
+    #   then:
+    #     - output.turn_off: bit4
+
+  - platform: output
+    name: "move_position3"
+    id: "move_position3"
+    output: bit2
+    on_turn_on:
+      then: 
+        - output.turn_on: bit4
+    on_turn_off:
+      then:
+        - output.turn_off: bit4
+
+  - platform: output
+    name: "move_position4"
+    id: "move_position4"
+    output: bit2
+    on_turn_on:
+      then: 
+        - output.turn_on: bit3
+    on_turn_off:
+      then:
+        - output.turn_off: bit3
+
+  - platform: output
+    name: "save position"
+    id: "save_position"
+    output: bit1
+    on_turn_on:
+      then: 
+        - output.turn_on: bit2
+    on_turn_off:
+      then:
+        - output.turn_off: bit2
+
+button:
+  - platform: restart
+    name: "Restart"
+
+
+
+
+  # Recall Presets
+  # - platform: template
+  #   id: recall_preset_1
+  #   name: "Preset 1"
+  #   icon: "mdi:numeric-1-box"
+  #   on_press:
+  #     - output.turn_on: button_bit1
+  #     - output.turn_on: button_bit2
+  #     - delay: 1s
+  #     - output.turn_off: button_bit2
+  #     - output.turn_off: button_bit1
+
+  # - platform: template
+  #   id: recall_preset_2
+  #   name: "Preset 2"
+  #   icon: "mdi:numeric-2-box"
+  #   on_press:
+  #     - output.turn_on: button_bit4
+  #     - delay: 100ms
+  #     - output.turn_off: button_bit4
+
+  # - platform: template
+  #   id: recall_preset_3
+  #   name: "Preset 3"
+  #   icon: "mdi:numeric-3-box"
+  #   on_press:
+  #     - output.turn_on: button_bit2
+  #     - output.turn_on: button_bit4
+  #     - delay: 100ms
+  #     - output.turn_off: button_bit4
+  #     - output.turn_off: button_bit2
+
+  # - platform: template
+  #   id: recall_preset_4
+  #   name: "Preset 4"
+  #   icon: "mdi:numeric-4-box"
+  #   on_press:
+  #     - output.turn_on: button_bit4
+  #     - output.turn_on: button_bit1
+  #     - delay: 100ms
+  #     - output.turn_off: button_bit1
+  #     - output.turn_off: button_bit4
+
+  # Set Presets
+  # - platform: template
+  #   name: "Set Preset 1"
+  #   entity_category: "config"
+  #   icon: "mdi:numeric-1-box-multiple"
+  #   on_press:
+  #     - output.turn_on: button_m
+  #     - delay: 100ms
+  #     - output.turn_off: button_m
+  #     - button.press: recall_preset_1
+
+  # - platform: template
+  #   name: "Set Preset 2"
+  #   entity_category: "config"
+  #   icon: "mdi:numeric-2-box-multiple"
+  #   on_press:
+  #     - output.turn_on: button_m
+  #     - delay: 100ms
+  #     - output.turn_off: button_m
+  #     - button.press: recall_preset_2
+
+  # - platform: template
+  #   name: "Set Preset 3"
+  #   entity_category: "config"
+  #   icon: "mdi:numeric-3-box-multiple"
+  #   on_press:
+  #     - output.turn_on: button_m
+  #     - delay: 100ms
+  #     - output.turn_off: button_m
+  #     - button.press: recall_preset_3
+
+  # - platform: template
+  #   name: "Set Preset 4"
+  #   entity_category: "config"
+  #   icon: "mdi:numeric-4-box-multiple"
+  #   on_press:
+  #     - output.turn_on: button_m
+  #     - delay: 100ms
+  #     - output.turn_off: button_m
+  #     - button.press: recall_preset_4
+
+
+# Configurable options
+substitutions:
+  name: "standing-desk"
+  friendly_name: "Upsy Desky"
+  desk_height_name: "Desk Height"
+  target_desk_height_name: "Target Desk Height"
+
+  # Standing Desk Component Config
+  standing_desk_uart_rx_pin: D2
+  standing_desk_min_height: "68"
+  standing_desk_max_height: "118"
+  bit1_pin: D5
+  bit2_pin: D6
+  bit3_pin: D7
+  bit4_pin: D8
+
+  # Runtime Config Defaults
+  default_height_units: "cm" # Must be "in" or "cm"
+
+
+##############################
+# custom
+##############################
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  name_add_mac_suffix: true
+  min_version: "2023.5.1"
+  on_boot:
+    then:
+      # Wakes up the desk and reports height
+      - uart.write:
+          id: handset_tx
+          data: [ 0x0 ]
+  project:
+    name: tj_horner.upsy_desky
+    version: "1.1.1"
+
+esp8266:
+  board: d1_mini
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "px7tsbK3C7bpXHr2OevEV2ZMg/FrNBw2+O2pNPbedtA="
+
+ota:
+  password: "294cb0da81d180b3a67a1c66280b5336"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Standing-Desk Fallback Hotspot"
+    password: "gDi9Wtl45soQ"
+
+captive_portal:
