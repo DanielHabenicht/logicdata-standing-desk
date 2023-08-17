@@ -3,33 +3,82 @@
 This repository is about reverse engineering a standing desk from Kinnarps.
 It applies to all hight adjustable tables with the [`LOGICDATA COMPACT-e-2L-O-V-EU Revision 2/1.9.14`](/hardware/main_unit.png) main units with the controller [`LOGICDATA HSF MDF 4M4 Rev3`](/hardware/controller_2.png) (click the link for pictures).
 
-The controller and main unit are connected via a `MAS 70S DIN` connector.
-It has the following layout:
+The controller and main unit are connected via a `MAS 70S DIN 45329` connector.
+It has the following layout: (also later found in [documentation](https://web.archive.org/web/20230817093331/https://www.logicdata.net/wp-content/uploads/2017/05/Datasheet_Compact_English-Rev4.pdf))
+
+![Logicdata handset socket pin alignment](hardware/logicdata_pin_layout.png)
 
 By hooking up a logic analyzer the following functions could be recorded (see records folder for raw files from [Salea Logic Analyzer](https://www.saleae.com/downloads/)).
 
-| Line   | Name    | Description                                                        |
-| ------ | ------- | ------------------------------------------------------------------ |
-| SHIELD | GND     | Ground                                                             |
-| 0      | SERIAL  | Serial communication for the display (height)                      |
-| 1      | -       | No function recorded                                               |
-| 2      | SIGNAL1 | Different functions.                                               |
-| 3      | SIGNAL2 | Different functions.                                               |
-| 4      | SIGNAL3 | Different functions.                                               |
-| 5      | TOGGLE  | Function toggle for other lines (HIGH - UP/DOWN or LOW - FUNCTION) |
-| 6      | Vcc     | Voltage supply                                                     |
+| Line  | Name | Description                                  | Captured Channel |
+| ----- | ---- | -------------------------------------------- | ---------------- |
+| SHELL | GND  | Ground                                       |                  |
+| 6     | Tx   | Serial communication to the display (height) | 0                |
+| 1     | Rx   | Serial communication to the controller       | 1                |
+| 4     | HS4  | See next table.                              | 2                |
+| 2     | HS3  | See next table.                              | 3                |
+| 5     | HS2  | See next table.                              | 4                |
+| 3     | HS1  | See next table.                              | 5                |
+| 7     | Vcc  | Voltage supply                               | 6                |
 
-Depending on the `TOGGLE` line the other lines have different functions.
+These functions were recorded:
 
-| TOGGLE | SIGNAL1 (line 2) | SIGNAL2 (line 3) | SIGNAL3 (line 4) | Description          |
-| ------ | ---------------- | ---------------- | ---------------- | -------------------- |
-| HIGH   | HIGH             | LOW              | -                | Button Down          |
-| HIGH   | LOW              | HIGH             | -                | Button Up            |
-| LOW    | LOW              | HIGH             | LOW              | Button position 1    |
-| LOW    | HIGH             | LOW              | LOW              | Button position 2    |
-| LOW    | HIGH             | LOW              | HIGH             | Button position 3    |
-| LOW    | LOW              | HIGH             | HIGH             | Button position 4    |
-| HIGH   | LOW              | LOW              | HIGH             | Button position save |
+| Actions              | HS1 (line 3) | HS2 (line 5) | HS3 (line 2) | HS4 (line 4) |
+| -------------------- | ------------ | ------------ | ------------ | ------------ |
+| Button Down          | HIGH         | LOW          | LOW          | HIGH         |
+| Button Up            | HIGH         | LOW          | HIGH         | LOW          |
+| Button position 1    | LOW          | LOW          | HIGH         | LOW          |
+| Button position 2    | LOW          | LOW          | LOW          | HIGH         |
+| Button position 3    | LOW          | HIGH         | LOW          | HIGH         |
+| Button position 4    | LOW          | HIGH         | HIGH         | LOW          |
+| Button position save | HIGH         | HIGH         | LOW          | LOW          |
+
+# Serial communication
+
+https://web.archive.org/web/20170720061035/https://www.mikrocontroller.net/topic/369941#new
+
+But no information about the decoding!
+Luckily google to the rescue: http://web.archive.org/web/20230814225435/http://logicoffice.at/download/datasheets/communication_en.pdf
+
+Seems like Documentation and everything else is wrong?
+Bit/Baud Rate: 1000 Bit/s
+Bits per Frame: 8
+Stop Bits: 1
+Parity Bit: even
+Significant Bit: Most Significant Bit First
+Signal Inversion: Yes
+
+Output in [standing-desk_logs.hex](/records/standing-desk_logs.hex).
+
+# Connecting UpsyDesky (esphome-standing-desk)
+
+https://github.com/tjhorner/esphome-standing-desk
+
+I don't have an adapter but I still [reuse the PIN Layout](https://upsy-desky.tjhorner.dev/docs/reference/gpio/) of the D1_mini.
+
+<!-- | RJ45 Pin | GPIO Pin (ESP32)  -->
+<!-- | -------- | ----------------  -->
+<!-- | 1        | 18                -->
+<!-- | 2        | 17                -->
+<!-- | 3        | N/A (GND)         -->
+<!-- | 4        | 16                -->
+<!-- | 5        | N/A (+5V)         -->
+<!-- | 6        | 19                -->
+<!-- | 7        | 21                -->
+<!-- | 8        | 22                -->
+
+| GPIO Pin (D1_mini) | DIN 45329 | ESPHome Name              | Logicdata Name |
+| ------------------ | --------- | ------------------------- | -------------- |
+| N/A (GND)          | SHELL     |                           |                |
+|                    | 1         |                           |                |
+| D7                 | 2         | bit3                      | HS3            |
+| D5                 | 3         | bit1                      | HS1            |
+| D8                 | 4         | bit4                      | HS4            |
+| D6                 | 5         | bit2                      | HS2            |
+| D2                 | 6         | standing_desk_uart_rx_pin | Tx             |
+| N/A (+5V)          | 7         |                           |                |
+
+https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 
 # Discussion about Logicdata Desks
 
