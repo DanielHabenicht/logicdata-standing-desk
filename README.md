@@ -8,8 +8,6 @@ It has the following layout: (also later found in [documentation](https://web.ar
 
 ![Logicdata handset socket pin alignment](hardware/logicdata_pin_layout.png)
 
-By hooking up a logic analyzer the following functions could be recorded (see records folder for raw files from [Salea Logic Analyzer](https://www.saleae.com/downloads/)).
-
 | Line  | Name | Description                                  | Captured Channel |
 | ----- | ---- | -------------------------------------------- | ---------------- |
 | SHELL | GND  | Ground                                       |                  |
@@ -21,34 +19,38 @@ By hooking up a logic analyzer the following functions could be recorded (see re
 | 3     | HS1  | See next table.                              | 5                |
 | 7     | Vcc  | Voltage supply                               | 6                |
 
-These functions were recorded:
+By hooking up a logic analyzer the following functions could be recorded (see the [records](/records/) folder for raw files from [Salea Logic Analyzer](https://www.saleae.com/downloads/)).
 
-| Actions              | HS1 (line 3) | HS2 (line 5) | HS3 (line 2) | HS4 (line 4) |
-| -------------------- | ------------ | ------------ | ------------ | ------------ |
-| Button Down          | HIGH         | LOW          | LOW          | HIGH         |
-| Button Up            | HIGH         | LOW          | HIGH         | LOW          |
-| Button position 1    | LOW          | LOW          | HIGH         | LOW          |
-| Button position 2    | LOW          | LOW          | LOW          | HIGH         |
-| Button position 3    | LOW          | HIGH         | LOW          | HIGH         |
-| Button position 4    | LOW          | HIGH         | HIGH         | LOW          |
-| Button position save | HIGH         | HIGH         | LOW          | LOW          |
+| Button Action | HS1 (line 3) | HS2 (line 5) | HS3 (line 2) | HS4 (line 4) |
+| ------------- | ------------ | ------------ | ------------ | ------------ |
+| Down          | HIGH         | LOW          | LOW          | HIGH         |
+| Up            | HIGH         | LOW          | HIGH         | LOW          |
+| position 1    | LOW          | LOW          | HIGH         | LOW          |
+| position 2    | LOW          | LOW          | LOW          | HIGH         |
+| position 3    | LOW          | HIGH         | LOW          | HIGH         |
+| position 4    | LOW          | HIGH         | HIGH         | LOW          |
+| position save | HIGH         | HIGH         | LOW          | LOW          |
 
 # Serial communication
 
-https://web.archive.org/web/20170720061035/https://www.mikrocontroller.net/topic/369941#new
+Through extensive googling this [communication datasheet](http://web.archive.org/web/20230814225435/http://logicoffice.at/download/datasheets/communication_en.pdf) turned up but when used to decode the signal it turned up garbage.
+So I turned to other projects already working but not with ESPHome ([phord/RoboDesk](https://github.com/phord/RoboDesk) and [davidknezic/desk](https://github.com/davidknezic/desk)).
 
-But no information about the decoding!
-Luckily google to the rescue: http://web.archive.org/web/20230814225435/http://logicoffice.at/download/datasheets/communication_en.pdf
+They used `1ms` data rate so I came up with these settings:
 
-Seems like Documentation and everything else is wrong?
+```
 Bit/Baud Rate: 1000 Bit/s
 Bits per Frame: 8
 Stop Bits: 1
 Parity Bit: even
 Significant Bit: Most Significant Bit First
 Signal Inversion: Yes
+```
 
-Output in [standing-desk_logs.hex](/records/standing-desk_logs.hex).
+Capturing the converted output in [standing-desk_logs.hex](/records/standing-desk_logs.hex).
+
+To extract the data this [thread](https://web.archive.org/web/20170720061035/https://www.mikrocontroller.net/topic/369941#new) turned out to be useful, stating that the last 8 bits of a message are the height.
+With a `[serial_data.py](/serial_data.py)` script I could confirm the numbers.
 
 # Connecting UpsyDesky (esphome-standing-desk)
 
@@ -67,24 +69,19 @@ I don't have an adapter but I still [reuse the PIN Layout](https://upsy-desky.tj
 <!-- | 7        | 21                -->
 <!-- | 8        | 22                -->
 
-| GPIO Pin (D1_mini) | DIN 45329 | ESPHome Name              | Logicdata Name |
-| ------------------ | --------- | ------------------------- | -------------- |
-| N/A (GND)          | SHELL     |                           |                |
-|                    | 1         |                           |                |
-| D7                 | 2         | bit3                      | HS3            |
-| D5                 | 3         | bit1                      | HS1            |
-| D8                 | 4         | bit4                      | HS4            |
-| D6                 | 5         | bit2                      | HS2            |
-| D2                 | 6         | standing_desk_uart_rx_pin | Tx             |
-| N/A (+5V)          | 7         |                           |                |
+| GPIO Pin (D1_mini - [Layout](https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/)) | DIN 45329 | ESPHome Name              | Logicdata Name |
+| ---------------------------------------------------------------------------------------------- | --------- | ------------------------- | -------------- |
+| N/A (GND)                                                                                      | SHELL     |                           |                |
+|                                                                                                | 1         |                           |                |
+| D7                                                                                             | 2         | bit3                      | HS3            |
+| D5                                                                                             | 3         | bit1                      | HS1            |
+| D8                                                                                             | 4         | bit4                      | HS4            |
+| D6                                                                                             | 5         | bit2                      | HS2            |
+| D2                                                                                             | 6         | standing_desk_uart_rx_pin | Tx             |
+| N/A (+5V)                                                                                      | 7         |                           |                |
 
-https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
+The actions in `example_sensor.yaml` are working.
 
 # Discussion about Logicdata Desks
 
 https://web.archive.org/web/20230812201115/https://www.mikrocontroller.net/topic/373579
-
-# Other projects
-
-https://github.com/phord/RoboDesk
-https://github.com/davidknezic/desk
